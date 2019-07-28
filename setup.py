@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from setuptools import setup, find_packages
-from __init__ import __version__
+from fancytables import __version__
 
 with open("README.md", "r") as f:
     long_description = f.read()
