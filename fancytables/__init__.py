@@ -2,5 +2,4 @@
 
 __version__ = "0.1a2"
 
-
-from .__fancytable import FancyTable
+from ._fancytable import FancyTable

@@ -2,7 +2,7 @@
 
 
 def basic_example():
-    from .__fancytable import FancyTable
+    from ._fancytable import FancyTable
 
     x = FancyTable(field_names=["City name", "Area",
                                 "Population", "Annual Rainfall"],)
