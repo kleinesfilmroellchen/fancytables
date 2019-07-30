@@ -2,9 +2,9 @@
 
 A modern port of the python prettytable package for creating nice tables with text characters.
 
-This project uses prettytable as its basis and retains that package as a subset. I.E.: This package is a superset of prettytable.
+This project uses prettytable as an inspiration and re-uses minor code snippets. As these snippets might not always be designated as such, I hereby refer to the [prettytables license](https://opensource.org/licenses/BSD-3-Clause) (3-Clause BSD).
 
-fancytables is only aiming at compatibility of Python 3.* , all 2.* users can use the prettytable subset which is fully compatible with those versions.
+fancytables is only aiming at compatibility of Python 3.* , all 2.* users can use prettytables. Switch already!
 
 Any contributions are welcome!
 
