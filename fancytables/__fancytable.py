@@ -1,6 +1,3 @@
-#!usr/bin/env python3
-
-
 class FancyTable:
     """
     The FancyTable class is the base class of the package.
@@ -22,28 +19,23 @@ class FancyTable:
 
     - Using new-style formatting (`str.format()`) with custom arguments that
      can determine basic formatting options. Example:
-
-
     ```python
     ft = FancyTable()
     # insert data...
     "{:...options go here...}".format(ft)
     ```
-
-
-    See the `FancyTable.__format__()` Documentation for information about formatting options.
-
+    See the `fancytables.FancyTable().__format__` Documentation for information about formatting options.
 
     - Using the method `format_table()` with
-        a) the `TableFormatter`, whose constructor allows the basic levels of
+
+        a. the `TableFormatter`, whose constructor allows the basic levels of
         format customization. Instead, the TableFormatter constructor arguments
         can also be directly passed to the `format_table()` method.
-        b) a `TableFormatter` subclass, either one of the built-in classes or
+
+        b. a `TableFormatter` subclass, either one of the built-in classes or
         user-defined classes.
         This allows for the highest level of customization, but is the most tedious
         on the user side.
-
-
     """
 
     def __init__(self, **kwargs):
