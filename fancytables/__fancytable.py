@@ -2,7 +2,6 @@
 
 
 class FancyTable:
-
     """
     The FancyTable class is the base class of the package.
     It holds table data and can output formatted text tables.
