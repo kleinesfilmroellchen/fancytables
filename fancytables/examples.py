@@ -1,7 +1,9 @@
 #!usr/bin/env python3
 
-from .__fancytable import FancyTable
 from itertools import islice
+
+from .__fancytable import FancyTable
+from .__formatters import TableFormatter
 
 
 def basic_example():
@@ -37,6 +39,18 @@ def make_exampletable():
                             ["Sydney", 2058, 4336374, 1214.8],
                             ["Melbourne", 1566, 3806092, 646.9],
                             ["Perth", 5386, 1554769, 869.4]])
+
+
+def example_customformatter():
+    table = make_exampletable()
+    print(table.formatted)
+    formatter = TableFormatter()
+
+    formatter.column_format = \
+        lambda column, header, minwidth, pos: \
+        [(f'X {{:{str(minwidth)}}} X').format(header['title'])] + \
+        [(f'# {{:{str(minwidth)}}} #').format(cell) for cell in column]
+    print(formatter(table))
 
 
 def example_dataadding():

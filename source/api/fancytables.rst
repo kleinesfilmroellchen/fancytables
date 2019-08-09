@@ -1,7 +1,7 @@
 FancyTables class
 ===================
 
-.. automodule:: fancytables.FancyTable
+.. autoclass:: fancytables.FancyTable
    :members:
    :undoc-members:
    :show-inheritance:

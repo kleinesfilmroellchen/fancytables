@@ -1,10 +1,12 @@
 #!usr/bin/env python3
+import logging
+
 from .__fancytable import FancyTable
 from .__formatters import TableFormatter
-import logging
+
 logger = logging.getLogger(__name__)
 
 __version__ = "0.1a2"
 
 
-logger.info("prettytables is alive! v" + __version__)
+logger.info("fancytables is alive! v" + __version__)

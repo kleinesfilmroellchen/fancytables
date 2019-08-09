@@ -1,9 +1,9 @@
 #!usr/bin/env python3
 import copy
-from itertools import islice
 import logging
-from typing import List
+from itertools import islice
 from numbers import Number
+from typing import List
 
 from .__formatters import TableFormatter
 
@@ -16,7 +16,7 @@ class FancyTable:
 
     Table output is possible in four different ways:
 
-    - Using the pseudo-property :prop:`fancytables.FancyTable.formatted`. This will
+    - Using the pseudo-property :func:`fancytables.FancyTable.formatted`. This will
       always return a normally formatted Unicode table without special borders,
       order or text format. Example: ::
         ft = FancyTable()
@@ -29,7 +29,7 @@ class FancyTable:
         # insert data...
         "{:...options go here...}".format(ft)
 
-    See :func:`fancytables.FancyTable().__format__` for information about formatting options.
+    See :func:`fancytables.FancyTable.__format__` for information about formatting options.
 
     - Using the method ``format_table()`` with
 
@@ -53,8 +53,6 @@ class FancyTable:
                ['mo', 're', 'lists']]   # add two rows at once
         feces = ft + ['poop', '💩', '💩'] # copy table with additional rows
 
-    Init arguments:
-
     :param headers: A list which defines this table's headers. Note that only
         data which aligns with a header is regarded, i.e. rows that are longer
         than a header only have the first n elements added, where n is the
@@ -66,19 +64,33 @@ class FancyTable:
             b. a dict-like, which allows you to define abstract options that
                affect formatting and printing. Possible keys are:
                 - **title** (str): define the header title.
-                - **content** (callable): define the header type. This is done
-                  by using a callable that takes one argument (the value to be
-                  used) and returns the converted value. It can throw a
-                  ``ValueError`` to indicate a bad value
+                - **formatter** (callable): a function callable with two
+                  arguments that determines how to format the column elements at
+                  formatting time. This formatting-specific option resides with
+                  the data as it creates more complications when residing with
+                  the TableFormatters (one formatter can only be used for one
+                  type of table etc.). The formatter recieves as its first
+                  argument the element to be formatted and as the second
+                  argument the width of the return string. The returned string
+                  should always have this length, otherwise, tables will be
+                  broken (╯°□°)╯︵ ┻━┻
+                - **important** (bool): state whether this column is important.
+                  All builtin table formatters use this to highlight the column
+                  and custom implementations are encouraged to do so.
+
+        Instead of using the keyword argument, you can also pass in the header
+        elements individually through positional arguments (see first example),
+        though the keyword-passed headers take precedence over these.
 
     :param data: Initial data to be inserted into the table. See
         :class:`fancytables.FancyTable.__add__` for information on possible
         data
     """
 
-    def __init__(self, headers: list = None, data: iter = None):
+    def __init__(self, *args, headers: list = None, data: iter = None):
+        #logger.debug("Table initialized, positional arguments: %s", str(args))
         self.__headers = self.__parse_headers(
-            headers if headers is not None else [])
+            headers if headers is not None else args)
         self.__data = self.__parse_data(
             self.__headers, data if data is not None else [])
         # logger.debug(str(self.__data) + str(self.__headers))
@@ -107,28 +119,24 @@ class FancyTable:
         logger.debug("Called format with args " + format_spec)
         return str(self)
 
-    def __str__(self):
-        # other arguments go here...
-        return self.__class__.__name__ + "("  # + ")"
-
-    def __bytes__(self):
-        return bytes(str(self), "utf-8")
-
     @property
     def formatted(self):
         """
         Returns the formatted text table with standard options and unicode
         characters.
         """
-        # call formatter
         return TableFormatter.Unicode(self)
 
-    def format_table(self, formatter, **kwargs):
+    def format_table(self, formatter=None, **kwargs):
         """
         Format the table using a certain formatter.
 
         This method will always call the formatter, therefore a callable or a
         TableFormatter instance needs to be passed.
+
+        If no formatter is specified (default), the keyword arguments are
+        passed to the :class:`fancytables.TableFormatter.Unicode` constructor
+        instead, thereby bypassing explicit formatter creation.
         """
         if formatter is None:
             logger.debug(
@@ -143,7 +151,6 @@ class FancyTable:
                 return dict(header)
             except ValueError:
                 return {"title": str(header),
-                        "content": "generic",
                         "important": False}
             return None
 
@@ -163,56 +170,48 @@ class FancyTable:
             retlist = []
             for element in lst:
                 try:
-                    retlist.append(
-                        FancyTable.__parse_innerdata(headers, element))
+                    retlist.append([val for val in element])
                 except TypeError:
                     # occurs when inner part of the method (see below) fails
                     pass
             return retlist
         except TypeError:
             # only if no fully nested iterable is provided
-            return [FancyTable.__parse_innerdata(headers, data)]
+            return [[val for val in data]]
 
-    @staticmethod
-    def __parse_innerdata(headers: dict, data: iter) -> list:
-        retlist = []
-        for header, val in zip(headers, data):
-            retlist.append(FancyTable.typecheck_data(header["content"], val))
-        return retlist
-
-    @staticmethod
-    def typecheck_data(header_type, value):
-        '''
-        Typechecks the given value with the given header type. This method
-        accounts for the special 'generic' type as well as the other 'stringy'
-        types that need to be given for the builtin types. The reason for not
-        simply using the builtin type callables such as int, bool, float etc.
-        is that they will accept a wide range of values that are clearly not
-        of the correct type. E.g. ``bool('a') => True`` ('a' is not wanted as
-        an entry to a boolean column). Therefore, these types are handled
-        separately by this method as they are passed as strings, not as
-        callables.
-        '''
-        if type(header_type) is str:
-            retval = {'int': (lambda i: int(i) if isinstance(i, Number) and not isinstance(i, complex) else NotImplemented),
-                      'float': (lambda f: float(f) if isinstance(f, Number) and not isinstance(f, complex) else NotImplemented),
-                      'generic': (lambda s: str(s)), 'str': (lambda s: str(s)),
-                      'bool': (lambda b: b if b is True or b is False else NotImplemented),
-                      'list': (lambda l: list(l) if isinstance(l, List) else NotImplemented),
-                      'dict': (lambda d: dict(d) if isinstance(d, dict) else NotImplemented),
-                      }[header_type](value)
-            if retval is NotImplemented:
-                raise TypeError(
-                    'Incorrect datatype: "' + str(value) + '" should be '
-                    + str(header_type))
-            return retval
-        else:
-            try:
-                return header_type(value)
-            except ValueError:
-                raise TypeError(
-                    'Incorrect datatype: "' + str(value) + '" should be '
-                    + str(header_type))
+    # @staticmethod
+    # def typecheck_data(header_type, value):
+    #     '''
+    #     Typechecks the given value with the given header type. This method
+    #     accounts for the special 'generic' type as well as the other 'stringy'
+    #     types that need to be given for the builtin types. The reason for not
+    #     simply using the builtin type callables such as int, bool, float etc.
+    #     is that they will accept a wide range of values that are clearly not
+    #     of the correct type. E.g. ``bool('a') => True`` ('a' is not wanted as
+    #     an entry to a boolean column). Therefore, these types are handled
+    #     separately by this method as they are passed as strings, not as
+    #     callables.
+    #     '''
+    #     if type(header_type) is str:
+    #         retval = {'int': (lambda i: int(i) if isinstance(i, Number) and not isinstance(i, complex) else NotImplemented),
+    #                   'float': (lambda f: float(f) if isinstance(f, Number) and not isinstance(f, complex) else NotImplemented),
+    #                   'generic': (lambda s: str(s)), 'str': (lambda s: str(s)),
+    #                   'bool': (lambda b: b if b is True or b is False else NotImplemented),
+    #                   'list': (lambda l: list(l) if isinstance(l, List) else NotImplemented),
+    #                   'dict': (lambda d: dict(d) if isinstance(d, dict) else NotImplemented),
+    #                   }[header_type](value)
+    #         if retval is NotImplemented:
+    #             raise TypeError(
+    #                 'Incorrect datatype: "' + str(value) + '" should be '
+    #                 + str(header_type))
+    #         return retval
+    #     else:
+    #         try:
+    #             return header_type(value)
+    #         except ValueError:
+    #             raise TypeError(
+    #                 'Incorrect datatype: "' + str(value) + '" should be '
+    #                 + str(header_type))
 
     @property
     def headers(self):
@@ -243,14 +242,28 @@ class FancyTable:
 
     @data.setter
     def data(self, data):
+        """
+        Property for retrieving, overriding or deleting all of the table's
+        data. The data retrieved is always deeply copied (see
+        `copy.deepcopy() <https://docs.python.org/library/copy.html#copy.deepcopy>`_)
+        """
         self.__data = self.__parse_data(self.__headers, data)
 
     @data.deleter
     def data(self):
+        """
+        Property for retrieving, overriding or deleting all of the table's
+        data. The data retrieved is always deeply copied (see
+        `copy.deepcopy() <https://docs.python.org/library/copy.html#copy.deepcopy>`_)
+        """
         self.__data = []
 
     def __add__(self, other):
-        """Add table content to this FancyTable. This is the main way of adding
+        """
+        Magic method for overriding the addition operator; when a table is on the left
+        side, this method will be triggered with the data to be added as the other argument.
+
+        Add table content to the FancyTable. This is the main way of adding
         new content to the FancyTable and supports many different content types:
 
         - A single list or iterable (not **only** nested with other lists) is regarded
@@ -276,6 +289,30 @@ class FancyTable:
         return newtable
 
     def __sub__(self, other):
+        '''
+        Magic method for overriding the subtraction operator.
+
+        Delete any number of rows from the table. The amount to be deleted must
+        be a positive integer, so ``table - 20`` is allowed, but ``table - (-8)``
+        is not. If the number of rows to be removed is larger than the number of
+        existing rows, all rows are deleted.
+        '''
+        if other <= 0:
+            raise ValueError(
+                "Cannot remove negative or zero amount of data from FancyTable.")
         newtable = copy.deepcopy(self)
         newtable.__data = newtable.__data[:-int(other)]
         return newtable
+
+    def __str__(self):
+        if len(self.__data) > 10:
+            return self.__class__.__name__ + "(" +\
+                str(list(islice(self.__data, 10)))[:-1] + " ...)"
+        return self.__class__.__name__ + "(" + str(self.__data) + ")"
+
+    def __repr__(self):
+        return self.__class__.__name__ + "(headers=" + str(self.__headers)\
+            + ",data=" + str(self.__data) + ")"
+
+    def __bytes__(self):
+        return bytes(str(self), "utf-8")
