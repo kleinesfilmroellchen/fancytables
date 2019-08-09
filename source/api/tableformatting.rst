@@ -62,8 +62,8 @@ method works:
        result.
     #. Check if the method :func:`fancytables.TableFormatter.row_format`
        returns something else than ``NotImplemented``. If so, format every
-       row using this method and stick them together correctly. Return the
-       result.
+       row, including a pseudo-row containing the headers, using this method
+       and stick them together correctly. Return the result.
     #. Check if the method :func:`fancytables.TableFormatter.get_border`
        returns something else than ``NotImplemented``. If so:
 
@@ -93,7 +93,7 @@ header(s) that are passed into various functions. They include the full
 header data from the table, but also more formatting-related information;
 for this reason, they are called **Formatter Headers**.
 
-* **min_width** The width a header's column content (and the header itself) has
+* **width** The width a header's column content (and the header itself) has
    to have as determined by the column contents. The
    :func:`fancytables.TableFormatter.cell_format` method should always return a
    string of this precise size.
